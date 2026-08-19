@@ -2,6 +2,38 @@
 A TWRP-less Kali NetHunter Full install guide for the Pixel 3 XL (crosshatch) on stock Android 12, using Magisk, KernelFlasher, and the Alynx NetHunter kernel.
 Pixel 3 XL (Crosshatch) — Kali NetHunter Full on Android 12
 
+⚠️ Current Kali Rolling / Alynx 4.9 Warning
+
+The install in this guide works, but there is currently a compatibility problem between the old Alynx 4.9.x kernel used by the Pixel 3 XL and newer Kali Rolling systemd / udev packages.
+
+Do not immediately run a normal apt full-upgrade after installing the chroot.
+
+Doing so can leave systemd, udev, and several NetHunter/Kali metapackages partially configured with errors such as:
+
+Protocol driver not attached
+
+Until the kernel compatibility issue is properly fixed, hold the systemd/udev family first:
+
+apt-mark hold \
+  systemd \
+  systemd-sysv \
+  libpam-systemd \
+  libsystemd-shared \
+  libsystemd0 \
+  libudev1 \
+  udev
+
+
+apt update
+apt full-upgrade
+
+If APT reports those packages as Not Upgrading, that is intentional.
+
+I am currently working on a proper long-term fix by looking at backporting the newer NetHunter statx support into the Alynx 4.9 Pixel 3 XL kernel. Until then, treat the package hold as a workaround, not a real fix.
+
+Yes, it is stupid that a fresh NetHunter install can break itself by doing a normal Kali upgrade. Welcome to running a 2026 userspace on a 2018 phone.
+
+
 I put this together because most of the Pixel 3 XL NetHunter guides still revolve around TWRP, and on Android 12 that path is a pain in the ass.
 
 The basic problem is encryption. TWRP on the Pixel 3 XL can boot, but depending on the build you end up with broken decryption, a frozen touchscreen, recovery crashing, or some combination of the three. After screwing with it enough, I stopped trying to make TWRP part of the process at all.
@@ -354,3 +386,9 @@ Most of the older Pixel 3 XL instructions aren't fundamentally wrong; they're ju
 On Android 12, I found it easier to remove TWRP from the equation completely.
 
 Patch the stock boot image with Magisk, flash the NetHunter kernel from the rooted OS, install the remaining modules, and move on with your life.
+
+modern systemd/udev vs Alynx 4.9
+/tmp inheriting Android’s /data/local/tmp
+/dev/null/mount namespace weirdness when entering the chroot incorrectly from ADB
+use su -mm when driving NetHunter through ADB
+keep a known-good chroot backup before experimenting
